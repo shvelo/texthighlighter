@@ -33,7 +33,6 @@ Also check Demos section below for examples of usage.
 * Highlighting of selected text.
 * Highlighting all occurrences of given text (find & highlight).
 * Removing highlights.
-* Selecting highlight color.
 * Serialization & deserialization.
 * Works well in iframes.
 * Keeps DOM clean.
@@ -65,7 +64,6 @@ Usage:
 ```
 let highlighter = new TextHighlighter(document.body, {
   enabled: false,
-  color: "",
   highlightedClass: 'my-highlighter-class',
   onBeforeHighlight: function (range) {
     ...
