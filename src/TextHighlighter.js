@@ -168,7 +168,6 @@
      * @returns {object}
      */
     var dom = function (el) {
-
         return /** @lends dom **/ {
 
             /**
@@ -199,7 +198,7 @@
 
             /**
              * Prepends child nodes to base element.
-             * @param {Node[]} nodesToPrepend
+             * @param {Node[]|NodeList} nodesToPrepend
              */
             prepend: function (nodesToPrepend) {
                 var nodes = Array.prototype.slice.call(nodesToPrepend),
@@ -212,7 +211,7 @@
 
             /**
              * Appends child nodes to base element.
-             * @param {Node[]} nodesToAppend
+             * @param {Node[]|NodeList} nodesToAppend
              */
             append: function (nodesToAppend) {
                 var nodes = Array.prototype.slice.call(nodesToAppend);
@@ -376,7 +375,7 @@
 
             /**
              * Returns window of the base element.
-             * @returns {Window}
+             * @returns {Window|DocumentView}
              */
             getWindow: function () {
                 return dom(el).getDocument().defaultView;
@@ -431,15 +430,20 @@
             color: '#ffff7b',
             highlightedClass: 'highlighted',
             contextClass: 'highlighter-context',
-            onRemoveHighlight: function () { return true; },
-            onBeforeHighlight: function () { return true; },
-            onAfterHighlight: function () { }
+            onRemoveHighlight: function () {
+                return true;
+            },
+            onBeforeHighlight: function () {
+                return true;
+            },
+            onAfterHighlight: function () {
+            }
         });
 
         dom(this.el).addClass(this.options.contextClass);
         bindEvents(this.el, this);
 
-        if (this.options.enabled==false) {
+        if (this.options.enabled === false) {
             this.disable();
         }
     }
@@ -462,11 +466,10 @@
 
     /**
      * Highlights current range.
-     * @param {boolean} keepRange - Don't remove range after highlighting. Default: false.
+     * @param {boolean} [keepRange] - Don't remove range after highlighting. Default: false.
      * @memberof TextHighlighter
      */
     TextHighlighter.prototype.doHighlight = function (keepRange) {
-
         var range = dom(this.el).getRange(),
             wrapper,
             createdHighlights,
@@ -523,7 +526,7 @@
                 if (IGNORE_TAGS.indexOf(node.parentNode.tagName) === -1 && node.nodeValue.trim() !== '') {
                     wrapperClone = wrapper.cloneNode(true);
 
-                    wrapperClone.setAttribute(DATA_ATTR, this.options.color!="");
+                    wrapperClone.setAttribute(DATA_ATTR, this.options.color != "");
                     nodeParent = node.parentNode;
 
                     // highlight if a node is inside the el
@@ -702,7 +705,7 @@
      */
     TextHighlighter.prototype.removeHighlights = function (element) {
         var container = element || this.el,
-            highlights = this.getHighlights({ container: container }),
+            highlights = this.getHighlights({container: container}),
             self = this;
 
         sortByDepth(highlights, true);
@@ -738,7 +741,7 @@
 
     /**
      * Returns highlights from given container.
-     * @param params
+     * @param [params]
      * @param {HTMLElement} [params.container] - return highlights from this element. Default: the element the
      * highlighter is applied to.
      * @param {boolean} [params.andSelf] - if set to true and container is a highlight itself, add container to
@@ -788,22 +791,21 @@
      * @memberof TextHighlighter
      */
     TextHighlighter.prototype.serializeHighlights = function (highlights) {
-      if (!highlights) {
-        highlights = this.getHighlights();
-      }
-      sortByDepth(highlights, false);
+        if (!highlights) {
+            highlights = this.getHighlights();
+        }
+        sortByDepth(highlights, false);
 
-      let hlDescriptors = [];
-      for (var i = 0; i < highlights.length; i++) {
-        hlDescriptors.push(this.serializeHighlight(highlights[i]));
-      }
-      return JSON.stringify(hlDescriptors);
-    }
-
+        var hlDescriptors = [];
+        for (var i = 0; i < highlights.length; i++) {
+            hlDescriptors.push(this.serializeHighlight(highlights[i]));
+        }
+        return JSON.stringify(hlDescriptors);
+    };
 
     /**
      * Serializes the highlight passed into it.
-     * @returns {array} - JSON with highlights definition
+     * @returns {Array} - JSON with highlights definition
      * @memberof TextHighlighter
      */
     TextHighlighter.prototype.serializeHighlight = function (highlight) {
@@ -878,7 +880,7 @@
                 node = node.childNodes[idx];
             }
 
-            if (node.childNodes[elIndex-1] && node.childNodes[elIndex-1].nodeType === NODE_TYPE.TEXT_NODE) {
+            if (node.childNodes[elIndex - 1] && node.childNodes[elIndex - 1].nodeType === NODE_TYPE.TEXT_NODE) {
                 elIndex -= 1;
             }
 
@@ -899,13 +901,13 @@
         }
 
         hlDescriptors.forEach(function (hlDescriptor) {
-          try {
-              deserializationFn(hlDescriptor);
-          } catch (e) {
-              if (console && console.warn) {
-                  console.warn("Can't deserialize highlight descriptor. Cause: " + e);
-              }
-          }
+            try {
+                deserializationFn(hlDescriptor);
+            } catch (e) {
+                if (console && console.warn) {
+                    console.warn("Can't deserialize highlight descriptor. Cause: " + e);
+                }
+            }
         });
 
         return highlights;
@@ -959,28 +961,24 @@
     TextHighlighter.createWrapper = function (options) {
         var span = document.createElement(options.wrapper);
         if (options.color) {
-          span.style.backgroundColor = options.color;
-        }                
+            span.style.backgroundColor = options.color;
+        }
         span.className = options.highlightedClass;
         return span;
     };
 
-    TextHighlighter.prototype.disable = function()
-    {
+    TextHighlighter.prototype.disable = function () {
         if (this.options.enabled) {
-             unbindEvents(this.el, this);
-             this.options.enabled=false;
+            unbindEvents(this.el, this);
+            this.options.enabled = false;
         }
-
     };
 
-    TextHighlighter.prototype.enable = function()
-    {
+    TextHighlighter.prototype.enable = function () {
         if (!this.options.enabled) {
-             bindEvents(this.el, this);
-             this.options.enabled=true;
+            bindEvents(this.el, this);
+            this.options.enabled = true;
         }
-
     };
 
     global.TextHighlighter = TextHighlighter;
