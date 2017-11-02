@@ -455,6 +455,8 @@
     };
 
     TextHighlighter.prototype.highlightHandler = function () {
+        if (!this.options.enabled) return false;
+
         this.doHighlight();
     };
 
@@ -464,8 +466,6 @@
      * @memberof TextHighlighter
      */
     TextHighlighter.prototype.doHighlight = function (keepRange) {
-
-        if (!this.options.enabled) return false;
 
         var range = dom(this.el).getRange(),
             wrapper,
