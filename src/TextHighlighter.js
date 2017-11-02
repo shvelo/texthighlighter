@@ -407,16 +407,17 @@
      * Creates TextHighlighter instance and binds to given DOM elements.
      * @param {HTMLElement} element - DOM element to which highlighted will be applied.
      * @param {object} [options] - additional options.
-     * @param {string} options.color - highlight color.
-     * @param {string} options.highlightedClass - class added to highlight, 'highlighted' by default.
-     * @param {string} options.contextClass - class added to element to which highlighter is applied,
+     * @param {string} [options.color = '#ffff7b'] - highlight color.
+     * @param {string} [options.highlightedClass = 'highlighted'] - class added to highlight, 'highlighted' by default.
+     * @param {string} [options.contextClass = 'highlighter-context'] - class added to element to which highlighter is applied,
      *  'highlighter-context' by default.
-     * @param {function} options.onRemoveHighlight - function called before highlight is removed. Highlight is
+     * @param {function} [options.onRemoveHighlight] - function called before highlight is removed. Highlight is
      *  passed as param. Function should return true if highlight should be removed, or false - to prevent removal.
-     * @param {function} options.onBeforeHighlight - function called before highlight is created. Range object is
+     * @param {function} [options.onBeforeHighlight] - function called before highlight is created. Range object is
      *  passed as param. Function should return true to continue processing, or false - to prevent highlighting.
-     * @param {function} options.onAfterHighlight - function called after highlight is created. Array of created
+     * @param {function} [options.onAfterHighlight] - function called after highlight is created. Array of created
      * wrappers is passed as param.
+     * @param {string} [options.wrapper = 'span'] - highlight wrapper element tag name
      * @class TextHighlighter
      */
     function TextHighlighter(element, options) {
@@ -430,6 +431,7 @@
             color: '#ffff7b',
             highlightedClass: 'highlighted',
             contextClass: 'highlighter-context',
+            wrapper: 'span',
             onRemoveHighlight: function () {
                 return true;
             },
