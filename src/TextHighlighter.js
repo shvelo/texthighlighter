@@ -424,10 +424,6 @@
 
         dom(this.el).addClass(this.options.contextClass);
         bindEvents(this.el, this);
-
-        if (this.options.enabled === false) {
-            this.disable();
-        }
     }
 
     /**
@@ -441,9 +437,8 @@
     };
 
     TextHighlighter.prototype.highlightHandler = function () {
-        if (!this.options.enabled) return false;
-
-        this.doHighlight();
+        if (this.options.enabled)
+            this.doHighlight();
     };
 
     /**
@@ -921,17 +916,11 @@
     };
 
     TextHighlighter.prototype.disable = function () {
-        if (this.options.enabled) {
-            unbindEvents(this.el, this);
-            this.options.enabled = false;
-        }
+        this.options.enabled = false;
     };
 
     TextHighlighter.prototype.enable = function () {
-        if (!this.options.enabled) {
-            bindEvents(this.el, this);
-            this.options.enabled = true;
-        }
+        this.options.enabled = true;
     };
 
     global.TextHighlighter = TextHighlighter;
