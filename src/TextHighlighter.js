@@ -168,7 +168,6 @@
      * @returns {object}
      */
     var dom = function (el) {
-
         return /** @lends dom **/ {
 
             /**
@@ -199,7 +198,7 @@
 
             /**
              * Prepends child nodes to base element.
-             * @param {Node[]} nodesToPrepend
+             * @param {Node[]|NodeList} nodesToPrepend
              */
             prepend: function (nodesToPrepend) {
                 var nodes = Array.prototype.slice.call(nodesToPrepend),
@@ -212,7 +211,7 @@
 
             /**
              * Appends child nodes to base element.
-             * @param {Node[]} nodesToAppend
+             * @param {Node[]|NodeList} nodesToAppend
              */
             append: function (nodesToAppend) {
                 var nodes = Array.prototype.slice.call(nodesToAppend);
@@ -376,7 +375,7 @@
 
             /**
              * Returns window of the base element.
-             * @returns {Window}
+             * @returns {Window|DocumentView}
              */
             getWindow: function () {
                 return dom(el).getDocument().defaultView;
@@ -408,16 +407,17 @@
      * Creates TextHighlighter instance and binds to given DOM elements.
      * @param {HTMLElement} element - DOM element to which highlighted will be applied.
      * @param {object} [options] - additional options.
-     * @param {string} options.color - highlight color.
-     * @param {string} options.highlightedClass - class added to highlight, 'highlighted' by default.
-     * @param {string} options.contextClass - class added to element to which highlighter is applied,
+     * @param {string} [options.color = '#ffff7b'] - highlight color.
+     * @param {string} [options.highlightedClass = 'highlighted'] - class added to highlight, 'highlighted' by default.
+     * @param {string} [options.contextClass = 'highlighter-context'] - class added to element to which highlighter is applied,
      *  'highlighter-context' by default.
-     * @param {function} options.onRemoveHighlight - function called before highlight is removed. Highlight is
+     * @param {function} [options.onRemoveHighlight] - function called before highlight is removed. Highlight is
      *  passed as param. Function should return true if highlight should be removed, or false - to prevent removal.
-     * @param {function} options.onBeforeHighlight - function called before highlight is created. Range object is
+     * @param {function} [options.onBeforeHighlight] - function called before highlight is created. Range object is
      *  passed as param. Function should return true to continue processing, or false - to prevent highlighting.
-     * @param {function} options.onAfterHighlight - function called after highlight is created. Array of created
+     * @param {function} [options.onAfterHighlight] - function called after highlight is created. Array of created
      * wrappers is passed as param.
+     * @param {string} [options.wrapper = 'span'] - highlight wrapper element tag name
      * @class TextHighlighter
      */
     function TextHighlighter(element, options) {
@@ -427,16 +427,27 @@
 
         this.el = element;
         this.options = defaults(options, {
+            enabled: true,
             color: '#ffff7b',
             highlightedClass: 'highlighted',
             contextClass: 'highlighter-context',
-            onRemoveHighlight: function () { return true; },
-            onBeforeHighlight: function () { return true; },
-            onAfterHighlight: function () { }
+            wrapper: 'span',
+            onRemoveHighlight: function () {
+                return true;
+            },
+            onBeforeHighlight: function () {
+                return true;
+            },
+            onAfterHighlight: function () {
+            }
         });
 
         dom(this.el).addClass(this.options.contextClass);
         bindEvents(this.el, this);
+
+        if (this.options.enabled === false) {
+            this.disable();
+        }
     }
 
     /**
@@ -450,12 +461,14 @@
     };
 
     TextHighlighter.prototype.highlightHandler = function () {
+        if (!this.options.enabled) return false;
+
         this.doHighlight();
     };
 
     /**
      * Highlights current range.
-     * @param {boolean} keepRange - Don't remove range after highlighting. Default: false.
+     * @param {boolean} [keepRange] - Don't remove range after highlighting. Default: false.
      * @memberof TextHighlighter
      */
     TextHighlighter.prototype.doHighlight = function (keepRange) {
@@ -514,7 +527,8 @@
 
                 if (IGNORE_TAGS.indexOf(node.parentNode.tagName) === -1 && node.nodeValue.trim() !== '') {
                     wrapperClone = wrapper.cloneNode(true);
-                    wrapperClone.setAttribute(DATA_ATTR, true);
+
+                    wrapperClone.setAttribute(DATA_ATTR, this.options.color != "");
                     nodeParent = node.parentNode;
 
                     // highlight if a node is inside the el
@@ -693,43 +707,43 @@
      */
     TextHighlighter.prototype.removeHighlights = function (element) {
         var container = element || this.el,
-            highlights = this.getHighlights({ container: container }),
+            highlights = this.getHighlights({container: container}),
             self = this;
-
-        function mergeSiblingTextNodes(textNode) {
-            var prev = textNode.previousSibling,
-                next = textNode.nextSibling;
-
-            if (prev && prev.nodeType === NODE_TYPE.TEXT_NODE) {
-                textNode.nodeValue = prev.nodeValue + textNode.nodeValue;
-                dom(prev).remove();
-            }
-            if (next && next.nodeType === NODE_TYPE.TEXT_NODE) {
-                textNode.nodeValue = textNode.nodeValue + next.nodeValue;
-                dom(next).remove();
-            }
-        }
-
-        function removeHighlight(highlight) {
-            var textNodes = dom(highlight).unwrap();
-
-            textNodes.forEach(function (node) {
-                mergeSiblingTextNodes(node);
-            });
-        }
 
         sortByDepth(highlights, true);
 
         highlights.forEach(function (hl) {
             if (self.options.onRemoveHighlight(hl) === true) {
-                removeHighlight(hl);
+                self.removeHighlight(hl);
             }
         });
     };
 
+    TextHighlighter.prototype.removeHighlight = function (highlight) {
+        var textNodes = dom(highlight).unwrap();
+
+        textNodes.forEach(function (node) {
+            mergeSiblingTextNodes(node);
+        });
+    };
+
+    function mergeSiblingTextNodes(textNode) {
+        var prev = textNode.previousSibling,
+            next = textNode.nextSibling;
+
+        if (prev && prev.nodeType === NODE_TYPE.TEXT_NODE) {
+            textNode.nodeValue = prev.nodeValue + textNode.nodeValue;
+            dom(prev).remove();
+        }
+        if (next && next.nodeType === NODE_TYPE.TEXT_NODE) {
+            textNode.nodeValue = textNode.nodeValue + next.nodeValue;
+            dom(next).remove();
+        }
+    }
+
     /**
      * Returns highlights from given container.
-     * @param params
+     * @param [params]
      * @param {HTMLElement} [params.container] - return highlights from this element. Default: the element the
      * highlighter is applied to.
      * @param {boolean} [params.andSelf] - if set to true and container is a highlight itself, add container to
@@ -772,15 +786,32 @@
         return el && el.nodeType === NODE_TYPE.ELEMENT_NODE && el.hasAttribute(DATA_ATTR);
     };
 
+
     /**
-     * Serializes all highlights in the element the highlighter is applied to.
+     * Serializes the highlights passed into it or all highlights if no param
      * @returns {string} - stringified JSON with highlights definition
      * @memberof TextHighlighter
      */
-    TextHighlighter.prototype.serializeHighlights = function () {
-        var highlights = this.getHighlights(),
-            refEl = this.el,
-            hlDescriptors = [];
+    TextHighlighter.prototype.serializeHighlights = function (highlights) {
+        if (!highlights) {
+            highlights = this.getHighlights();
+        }
+        sortByDepth(highlights, false);
+
+        var hlDescriptors = [];
+        for (var i = 0; i < highlights.length; i++) {
+            hlDescriptors.push(this.serializeHighlight(highlights[i]));
+        }
+        return JSON.stringify(hlDescriptors);
+    };
+
+    /**
+     * Serializes the highlight passed into it.
+     * @returns {Array} - JSON with highlights definition
+     * @memberof TextHighlighter
+     */
+    TextHighlighter.prototype.serializeHighlight = function (highlight) {
+        var refEl = this.el;
 
         function getElementPath(el, refElement) {
             var path = [],
@@ -795,31 +826,20 @@
             return path;
         }
 
-        sortByDepth(highlights, false);
 
-        highlights.forEach(function (highlight) {
-            var offset = 0, // Hl offset from previous sibling within parent node.
-                length = highlight.textContent.length,
-                hlPath = getElementPath(highlight, refEl),
-                wrapper = highlight.cloneNode(true);
+        var offset = 0, // Hl offset from previous sibling within parent node.
+            length = highlight.textContent.length,
+            hlPath = getElementPath(highlight, refEl),
+            wrapper = highlight.cloneNode(true);
 
-            wrapper.innerHTML = '';
-            wrapper = wrapper.outerHTML;
+        wrapper.innerHTML = '';
+        wrapper = wrapper.outerHTML;
 
-            if (highlight.previousSibling && highlight.previousSibling.nodeType === NODE_TYPE.TEXT_NODE) {
-                offset = highlight.previousSibling.length;
-            }
+        if (highlight.previousSibling && highlight.previousSibling.nodeType === NODE_TYPE.TEXT_NODE) {
+            offset = highlight.previousSibling.length;
+        }
 
-            hlDescriptors.push([
-                wrapper,
-                highlight.textContent,
-                hlPath.join(':'),
-                offset,
-                length
-            ]);
-        });
-
-        return JSON.stringify(hlDescriptors);
+        return [wrapper, highlight.textContent, hlPath.join(':'), offset, length];
     };
 
     /**
@@ -862,7 +882,7 @@
                 node = node.childNodes[idx];
             }
 
-            if (node.childNodes[elIndex-1] && node.childNodes[elIndex-1].nodeType === NODE_TYPE.TEXT_NODE) {
+            if (node.childNodes[elIndex - 1] && node.childNodes[elIndex - 1].nodeType === NODE_TYPE.TEXT_NODE) {
                 elIndex -= 1;
             }
 
@@ -941,10 +961,26 @@
      * @static
      */
     TextHighlighter.createWrapper = function (options) {
-        var span = document.createElement('span');
-        span.style.backgroundColor = options.color;
+        var span = document.createElement(options.wrapper);
+        if (options.color) {
+            span.style.backgroundColor = options.color;
+        }
         span.className = options.highlightedClass;
         return span;
+    };
+
+    TextHighlighter.prototype.disable = function () {
+        if (this.options.enabled) {
+            unbindEvents(this.el, this);
+            this.options.enabled = false;
+        }
+    };
+
+    TextHighlighter.prototype.enable = function () {
+        if (!this.options.enabled) {
+            bindEvents(this.el, this);
+            this.options.enabled = true;
+        }
     };
 
     global.TextHighlighter = TextHighlighter;
