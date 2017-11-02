@@ -29,16 +29,6 @@
         ];
 
     /**
-     * Returns true if elements a i b have the same color.
-     * @param {Node} a
-     * @param {Node} b
-     * @returns {boolean}
-     */
-    function haveSameColor(a, b) {
-        return dom(a).color() === dom(b).color();
-    }
-
-    /**
      * Fills undefined values in obj with default properties with the same name from source object.
      * @param {object} obj - target object
      * @param {object} source - source object with default values
@@ -324,14 +314,6 @@
             },
 
             /**
-             * Returns element background color.
-             * @returns {CSSStyleDeclaration.backgroundColor}
-             */
-            color: function () {
-                return el.style.backgroundColor;
-            },
-
-            /**
              * Creates dom element from given html string.
              * @param {string} html
              * @returns {NodeList}
@@ -407,7 +389,6 @@
      * Creates TextHighlighter instance and binds to given DOM elements.
      * @param {HTMLElement} element - DOM element to which highlighted will be applied.
      * @param {object} [options] - additional options.
-     * @param {string} [options.color = '#ffff7b'] - highlight color.
      * @param {string} [options.highlightedClass = 'highlighted'] - class added to highlight, 'highlighted' by default.
      * @param {string} [options.contextClass = 'highlighter-context'] - class added to element to which highlighter is applied,
      *  'highlighter-context' by default.
@@ -428,7 +409,6 @@
         this.el = element;
         this.options = defaults(options, {
             enabled: true,
-            color: '#ffff7b',
             highlightedClass: 'highlighted',
             contextClass: 'highlighter-context',
             wrapper: 'span',
@@ -528,7 +508,6 @@
                 if (IGNORE_TAGS.indexOf(node.parentNode.tagName) === -1 && node.nodeValue.trim() !== '') {
                     wrapperClone = wrapper.cloneNode(true);
 
-                    wrapperClone.setAttribute(DATA_ATTR, this.options.color != "");
                     nodeParent = node.parentNode;
 
                     // highlight if a node is inside the el
@@ -614,9 +593,7 @@
                     parentNext = parent.nextSibling;
 
                 if (self.isHighlight(parent)) {
-
-                    if (!haveSameColor(parent, hl)) {
-
+                    if (!self.isHighlight(hl)) {
                         if (!hl.nextSibling) {
                             dom(hl).insertBefore(parentNext || parent);
                             again = true;
@@ -630,15 +607,12 @@
                         if (!parent.hasChildNodes()) {
                             dom(parent).remove();
                         }
-
                     } else {
                         parent.replaceChild(hl.firstChild, hl);
                         highlights[i] = parent;
                         again = true;
                     }
-
                 }
-
             });
 
             return again;
@@ -658,10 +632,8 @@
     TextHighlighter.prototype.mergeSiblingHighlights = function (highlights) {
         var self = this;
 
-        function shouldMerge(current, node) {
-            return node && node.nodeType === NODE_TYPE.ELEMENT_NODE &&
-                haveSameColor(current, node) &&
-                self.isHighlight(node);
+        function shouldMerge(node) {
+            return node && node.nodeType === NODE_TYPE.ELEMENT_NODE && self.isHighlight(node);
         }
 
         highlights.forEach(function (highlight) {
@@ -679,24 +651,6 @@
 
             dom(highlight).normalizeTextNodes();
         });
-    };
-
-    /**
-     * Sets highlighting color.
-     * @param {string} color - valid CSS color.
-     * @memberof TextHighlighter
-     */
-    TextHighlighter.prototype.setColor = function (color) {
-        this.options.color = color;
-    };
-
-    /**
-     * Returns highlighting color.
-     * @returns {string}
-     * @memberof TextHighlighter
-     */
-    TextHighlighter.prototype.getColor = function () {
-        return this.options.color;
     };
 
     /**
@@ -802,6 +756,7 @@
         for (var i = 0; i < highlights.length; i++) {
             hlDescriptors.push(this.serializeHighlight(highlights[i]));
         }
+
         return JSON.stringify(hlDescriptors);
     };
 
@@ -825,7 +780,6 @@
 
             return path;
         }
-
 
         var offset = 0, // Hl offset from previous sibling within parent node.
             length = highlight.textContent.length,
@@ -962,9 +916,6 @@
      */
     TextHighlighter.createWrapper = function (options) {
         var span = document.createElement(options.wrapper);
-        if (options.color) {
-            span.style.backgroundColor = options.color;
-        }
         span.className = options.highlightedClass;
         return span;
     };
