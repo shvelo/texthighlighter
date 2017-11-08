@@ -461,6 +461,7 @@
             timestamp = +new Date();
             wrapper = TextHighlighter.createWrapper(this.options);
             wrapper.setAttribute(TIMESTAMP_ATTR, timestamp);
+            wrapper.setAttribute(DATA_ATTR, "true");
 
             createdHighlights = this.highlightRange(range, wrapper);
             normalizedHighlights = this.normalizeHighlights(createdHighlights);
@@ -627,19 +628,19 @@
     TextHighlighter.prototype.mergeSiblingHighlights = function (highlights) {
         var self = this;
 
-        function shouldMerge(node) {
-            return node && node.nodeType === NODE_TYPE.ELEMENT_NODE && self.isHighlight(node);
+        function shouldMerge(current, node) {
+            return node && node.nodeType === NODE_TYPE.ELEMENT_NODE && self.isHighlight(current) &&  self.isHighlight(node);
         }
 
         highlights.forEach(function (highlight) {
             var prev = highlight.previousSibling,
                 next = highlight.nextSibling;
 
-            if (shouldMerge(highlight, prev)) {
+            if (prev && shouldMerge(highlight, prev)) {
                 dom(highlight).prepend(prev.childNodes);
                 dom(prev).remove();
             }
-            if (shouldMerge(highlight, next)) {
+            if (next && shouldMerge(highlight, next)) {
                 dom(highlight).append(next.childNodes);
                 dom(next).remove();
             }
@@ -734,7 +735,6 @@
     TextHighlighter.prototype.isHighlight = function (el) {
         return el && el.nodeType === NODE_TYPE.ELEMENT_NODE && el.hasAttribute(DATA_ATTR);
     };
-
 
     /**
      * Serializes the highlights passed into it or all highlights if no param
